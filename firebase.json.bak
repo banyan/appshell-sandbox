@@ -1,0 +1,30 @@
+{
+  "hosting": {
+    "public": "build",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "headers": [
+          {
+            "source": "/",
+            "headers": [{"key": "Link", "value": "</static/js/main.040af075.js>;rel=preload;as=script"}]
+          },
+          {
+            "source": "/login",
+            "headers": [{"key": "Link", "value": "</static/js/main.040af075.js>;rel=preload;as=script"}]
+          }
+        ]
+      }
+    ]
+  }
+}
