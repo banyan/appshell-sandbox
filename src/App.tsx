@@ -1,5 +1,6 @@
 import * as React from 'react';
-import { BrowserRouter, Route, withRouter, Redirect } from 'react-router-dom';
+// import { BrowserRouter, Route, withRouter, Redirect } from 'react-router-dom';
+import { BrowserRouter, Route, withRouter } from 'react-router-dom';
 import './App.css';
 import fakeAuth from './lib/fake_auth';
 
@@ -20,16 +21,13 @@ import Dashboard from './pages/Dashboard';
 import About from './pages/About';
 
 const PrivateRoute = ({ component: Component, ...rest }) => (
-  <Route {...rest} render={props => (
-    fakeAuth.isAuthenticated ? (
-      <Component {...props}/>
-    ) : (
-      <Redirect to={{
-        pathname: '/login',
-        state: { from: props.location }
-      }}/>
-    )
-  )}/>
+  <Route {...rest} render={props => {
+    if (fakeAuth.isAuthenticated) {
+      return <Component {...props}/>
+    } else {
+      return null;
+    }
+  }}/>
 )
 
 const App = () => (
