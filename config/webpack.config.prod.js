@@ -266,6 +266,13 @@ module.exports = {
     // Otherwise React will be compiled in the very slow development mode.
     new webpack.DefinePlugin(env.stringified),
     // Minify the code.
+    new webpack.optimize.CommonsChunkPlugin({
+        name: 'vendor',
+        filename: 'vendor.[chunkhash].js',
+        minChunks (module) {
+            return module.context && module.context.indexOf('node_modules') >= 0;
+        }
+    }),
     new webpack.optimize.UglifyJsPlugin({
       compress: {
         warnings: false,
