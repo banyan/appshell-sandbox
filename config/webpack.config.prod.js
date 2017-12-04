@@ -272,12 +272,16 @@ module.exports = {
     new webpack.optimize.ModuleConcatenationPlugin(),
     // Minify the code.
     new webpack.optimize.CommonsChunkPlugin({
-        name: 'vendor',
+        name: 'react-build',
         filename: 'vendor.[chunkhash].js',
         minChunks (module) {
-            return module.context && module.context.indexOf('node_modules') >= 0;
+            var context = module.context;
+            return context && (context.indexOf('node_modules\\react\\') >= 0 || context.indexOf('node_modules\\react-dom\\') >= 0);
         }
     }),
+   new webpack.optimize.CommonsChunkPlugin({
+       name: 'manifest'
+   }),
     new webpack.optimize.UglifyJsPlugin({
       compress: {
         warnings: false,
@@ -295,7 +299,7 @@ module.exports = {
         comments: false
       }
     }),
-    new webpack.HashedModuleIdsPlugin()
+    new webpack.HashedModuleIdsPlugin(),
     // Note: this won't work without ExtractTextPlugin.extract(..) in `loaders`.
     new ExtractTextPlugin({
       filename: cssFilename,
