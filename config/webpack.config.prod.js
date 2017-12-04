@@ -13,6 +13,7 @@ const paths = require('./paths');
 const getClientEnvironment = require('./env');
 const HtmlCriticalPlugin = require('html-critical-webpack-plugin');
 const PreloadWebpackPlugin = require('preload-webpack-plugin');
+const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
 
 // Webpack uses `publicPath` to determine where the app is being served from.
 // It requires a trailing slash, or the file assets will get an incorrect path.
@@ -260,6 +261,9 @@ module.exports = {
       // rel: 'preload',
       // include: 'all'
     // }),
+    new ScriptExtHtmlWebpackPlugin({
+        defaultAttribute: 'defer'
+    }),
     // Makes some environment variables available to the JS code, for example:
     // if (process.env.NODE_ENV === 'production') { ... }. See `./env.js`.
     // It is absolutely essential that NODE_ENV was set to production here.
