@@ -74,7 +74,7 @@ module.exports = {
       // Add the polyfills
       polyfills: require.resolve('./polyfills'),
     },
-    // Only add the vendors if the file "src/vendors.js" exists
+    // Only add the vendors if the file "src/vendors.tsx" exists
     // List of all the node modules that should be excluded from the app
     extractVendors() || {}
   ),
@@ -401,6 +401,10 @@ module.exports = {
           minChunks: Infinity,
         })
       : null,
+
+    // console.log('----------');
+    // console.log('extractVendors(): ', extractVendors());
+    // console.log('----------');
 
     // The runtime is the part of Webpack that resolves modules
     // at runtime and handles async loading and more

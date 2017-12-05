@@ -1,1 +1,1 @@
-module.exports = ['react', 'react-dom'];
+module.exports = ['react', 'react-dom', 'react-router-dom'];
