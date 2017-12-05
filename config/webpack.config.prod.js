@@ -58,16 +58,7 @@ module.exports = {
   // You can exclude the *.map files from the build during deployment.
   devtool: shouldUseSourceMap ? 'source-map' : false,
   // In production, we only want to load the polyfills and the app code.
-  entry: {
-    app: paths.appIndexJs,
-    polyfill: require.resolve('./polyfills'),
-    vendor: [
-      'react',
-      'react-dom',
-      'react-router-dom',
-    ],
-  },
-    // [require.resolve('./polyfills'), paths.appIndexJs],
+  entry: [require.resolve('./polyfills'), paths.appIndexJs],
   output: {
     // The build folder.
     path: paths.appBuild,
@@ -278,11 +269,19 @@ module.exports = {
     // It is absolutely essential that NODE_ENV was set to production here.
     // Otherwise React will be compiled in the very slow development mode.
     new webpack.DefinePlugin(env.stringified),
-    new webpack.optimize.CommonsChunkPlugin({
-      names: ['vendor', 'manifest'],
-    }),
     new webpack.optimize.ModuleConcatenationPlugin(),
     // Minify the code.
+    new webpack.optimize.CommonsChunkPlugin({
+        name: 'react-build',
+        filename: 'vendor.[chunkhash].js',
+        minChunks (module) {
+            var context = module.context;
+            return context && (context.indexOf('node_modules\\react\\') >= 0 || context.indexOf('node_modules\\react-dom\\') >= 0);
+        }
+    }),
+   new webpack.optimize.CommonsChunkPlugin({
+       name: 'manifest'
+   }),
     new webpack.optimize.UglifyJsPlugin({
       compress: {
         warnings: false,
