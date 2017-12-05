@@ -276,10 +276,10 @@ module.exports = {
         minifyURLs: true,
       },
     }),
-    // new PreloadWebpackPlugin({
-      // rel: 'preload',
-      // include: 'all'
-    // }),
+    new PreloadWebpackPlugin({
+      rel: 'preload',
+      include: 'all'
+    }),
     new ScriptExtHtmlWebpackPlugin({
         defaultAttribute: 'defer'
     }),
