@@ -14,6 +14,10 @@ const getClientEnvironment = require('./env');
 const HtmlCriticalPlugin = require('html-critical-webpack-plugin');
 const PreloadWebpackPlugin = require('preload-webpack-plugin');
 const ScriptExtHtmlWebpackPlugin = require('script-ext-html-webpack-plugin');
+const NameAllModulesPlugin = require('name-all-modules-plugin');
+
+const fs = require('fs');
+const extractVendors = require('./extractVendors');
 
 // Webpack uses `publicPath` to determine where the app is being served from.
 // It requires a trailing slash, or the file assets will get an incorrect path.
@@ -48,6 +52,10 @@ const extractTextPluginOptions = shouldUseRelativeAssetPaths
     { publicPath: Array(cssFilename.split('/').length).join('../') }
   : {};
 
+console.log('-------')
+console.log('paths.appIndexJs: ', paths.appIndexJs)
+console.log('-------')
+
 // This is the production configuration.
 // It compiles slowly and is focused on producing a fast and minimal bundle.
 // The development configuration is different and lives in a separate file.
@@ -58,7 +66,18 @@ module.exports = {
   // You can exclude the *.map files from the build during deployment.
   devtool: shouldUseSourceMap ? 'source-map' : false,
   // In production, we only want to load the polyfills and the app code.
-  entry: [require.resolve('./polyfills'), paths.appIndexJs],
+  // entry: [require.resolve('./polyfills'), paths.appIndexJs],
+  entry: Object.assign(
+    {
+      // Load the app and all its dependencies
+      main: paths.appIndexJs,
+      // Add the polyfills
+      polyfills: require.resolve('./polyfills'),
+    },
+    // Only add the vendors if the file "src/vendors.js" exists
+    // List of all the node modules that should be excluded from the app
+    extractVendors() || {}
+  ),
   output: {
     // The build folder.
     path: paths.appBuild,
@@ -272,11 +291,14 @@ module.exports = {
     new webpack.optimize.ModuleConcatenationPlugin(),
     // Minify the code.
     new webpack.optimize.CommonsChunkPlugin({
-        name: 'vendor',
-        filename: 'vendor.[chunkhash].js',
-        minChunks (module) {
-            return module.context && module.context.indexOf('node_modules') >= 0;
-        }
+        name: 'main',
+        async: true,
+        children: true,
+        minChunks: 3,
+        // filename: 'vendor.[chunkhash].js',
+        // minChunks (module) {
+            // return module.context && module.context.indexOf('node_modules') >= 0;
+        // }
     }),
     new webpack.optimize.UglifyJsPlugin({
       compress: {
@@ -342,6 +364,54 @@ module.exports = {
     // You can remove this if you don't use Moment.js:
     new webpack.IgnorePlugin(/^\.\/locale$/, /moment$/),
 
+    // For some reason, Webpack adds some ids of all the modules that exist to our vendor chunk
+    // Instead of using numerical ids it uses a unique path to map our request to a module.
+    // Thanks to this change the vendor hash will now always stay the same
+    new webpack.NamedModulesPlugin(),
+
+    // Ensure that every chunks have an actual name and not an id
+    // If the chunk has a name, this name is used
+    // otherwise the name of the file is used
+    new webpack.NamedChunksPlugin(chunk => {
+      if (chunk.name) {
+        return chunk.name;
+      }
+      const chunkNames = chunk.mapModules(m => m);
+      // Sort the chunks by their depths
+      // The chunk with the lower depth is the imported one
+      // The others are its dependencies
+      chunkNames.sort((chunkA, chunkB) => chunkA.depth - chunkB.depth);
+      // Get the absolute path of the file
+      const fileName = chunkNames[0].resource;
+      // Return the name of the file without the extension
+      return path.basename(fileName, path.extname(fileName));
+    }),
+
+    // Avoid having the vendors in the rest of the app
+    // Only execute if the vendors file exists
+
+    // ...(extractVendors() ? Object.keys(extractVendors()).map(vendorName =>
+    //   new webpack.optimize.CommonsChunkPlugin({
+    //     name: vendorName,
+    //     minChunks: Infinity,
+    //   })) : [null]),
+    fs.existsSync(paths.appVendors)
+      ? new webpack.optimize.CommonsChunkPlugin({
+          names: Object.keys(extractVendors()),
+          minChunks: Infinity,
+        })
+      : null,
+
+    // The runtime is the part of Webpack that resolves modules
+    // at runtime and handles async loading and more
+    new webpack.optimize.CommonsChunkPlugin({
+      name: 'runtime',
+    }),
+
+    // https://medium.com/webpack/predictable-long-term-caching-with-webpack-d3eee1d3fa31
+    // Name the modules that were not named by the previous plugins
+    new NameAllModulesPlugin(),
+
     new HtmlCriticalPlugin({
       base: paths.appBuild,
       src: 'index.html',
@@ -355,7 +425,9 @@ module.exports = {
         blockJSRequests: false,
       }
     }),
-  ],
+  ]
+  // Remove null elements
+  .filter(Boolean),
   // Some libraries import Node modules but don't use them in the browser.
   // Tell Webpack to provide empty mocks for them so importing them works.
   node: {

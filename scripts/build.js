@@ -20,6 +20,7 @@ const fs = require('fs-extra');
 const webpack = require('webpack');
 const config = require('../config/webpack.config.prod');
 const paths = require('../config/paths');
+const extractVendors = require('../config/extractVendors');
 const checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
 const formatWebpackMessages = require('react-dev-utils/formatWebpackMessages');
 const printHostingInstructions = require('react-dev-utils/printHostingInstructions');
@@ -49,6 +50,34 @@ measureFileSizesBeforeBuild(paths.appBuild)
     fs.emptyDirSync(paths.appBuild);
     // Merge with the public folder
     copyPublicFolder();
+
+    // Check if every vendors are defined in the package.json
+    // @remove-on-eject-begin
+    // The devDepencencies shouldn't be available for vendors
+    // But otherwise the tests fail.
+    // @remove-on-eject-end
+    const packageJson = require(paths.appPackageJson);
+    const dependencies = Object.keys(packageJson.dependencies || {})
+      .concat(Object.keys(packageJson.devDependencies || {}))
+      .concat(Object.keys(packageJson.peerDependencies || {}));
+    const vendors = extractVendors();
+    const flatVendors = [];
+    Object.keys(vendors).forEach(vendorName => {
+      flatVendors.concat(vendors[vendorName]);
+    });
+
+    const missingVendors = Object.keys(flatVendors).filter(
+      vendor => dependencies.indexOf(vendor) === -1
+    );
+    if (missingVendors.length > 0) {
+      throw new Error(
+        'Error: Unknown vendors: ' +
+          chalk.yellow(missingVendors) +
+          " should be listed in the project's dependencies.\n" +
+          `(Vendors defined in '${path.resolve(paths.appVendors)}')`
+      );
+    }
+
     // Start the webpack build
     return build(previousFileSizes);
   })
