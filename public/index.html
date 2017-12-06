@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <script async="async">
-      if (location.pathname !== '/login' || localStorage.getItem('auth') === null) {
-        window.location.assign("/login");
+      if (location.pathname !== '/login' && localStorage.getItem('auth') === null) {
+        window.location.assign('/login');
       }
     </script>
     <meta charset="utf-8">
